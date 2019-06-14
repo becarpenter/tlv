@@ -6,3 +6,5 @@ This repository is for a Python 3 module that provides dumps() and loads() funct
 The pattern format is documented in the python source file - import tlv and do help(tlv.pattern). Of course, help(tlv) is also available.
 
 This code IS NOT INTENDED FOR PRODUCTION USE. See the license and disclaimer in the tlv.py source file.
+
+There's also some toy code for Service Oriented IP (draft-jiang-service-oriented-ip), purely FYI.
