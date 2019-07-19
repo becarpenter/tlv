@@ -259,6 +259,7 @@ _soip_initialised = False #true after SOIP core has been initialised
 _skip_dialogue = False    #true if user calls soip.skip_dialogue
 
 # _my_address         #this node's preferred routeable address
+# _send_addr          #addr to send from
 # _my_link_local      #this node's preferred link local address
 # _session_locator    #address used to disambiguate session ids
 # test_mode           #True iff module is running in test mode
@@ -1273,6 +1274,7 @@ def initialise_soip(serving=False):
     global _sess_lock
     global _print_lock
     global _my_address
+    global _from_addr
     global _my_link_local
     global _session_locator
     global _skip_dialogue
@@ -1385,14 +1387,18 @@ def initialise_soip(serving=False):
 
     #Borrow this from the GRASP world...
 
-    _my_address = acp._get_my_address(build_zone=False)
+    _my_address, _ll_zone_ids = acp._get_my_address(build_zone=True)
+    _my_link_local = _ll_zone_ids[0][1]
  
     if _my_address == None:
-        tprint("Could not find a valid global IPv6 address, will generate a bogon for session disambiguation")
-        _p = bytes.fromhex('20010db8f000baaaf000baaa')       #96 bits of prefix
-        _x = struct.pack('!L', _prng.randint(0, 2147483647)) #32 bits of randomness
-        _session_locator = ipaddress.IPv6Address(_p+_x)
+        tprint("Could not find a valid global IPv6 address, will use link local for session disambiguation")
+##        _p = bytes.fromhex('20010db8f000baaaf000baaa')       #96 bits of prefix
+##        _x = struct.pack('!L', _prng.randint(0, 2147483647)) #32 bits of randomness
+##        _session_locator = ipaddress.IPv6Address(_p+_x)
+        _session_locator = _my_link_local
+        _from_addr = _my_link_local
     else:
+        _from_addr = _my_address
         if not (_my_address.is_private and not _my_address.is_link_local):
             tprint("WARNING: address is not ULA")
         _session_locator = _my_address
@@ -1423,7 +1429,7 @@ def initialise_soip(serving=False):
     send_sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
     send_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     #ensure that we send from desired address
-    send_sock.bind((str(_my_address),0))
+    send_sock.bind((str(_from_addr),0))
     ttprint("Set up UDP sending socket")
 
 
